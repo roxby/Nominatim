@@ -99,7 +99,6 @@ endif()
 set(WEBSITESCRIPTS
     website/deletable.php
     website/details.php
-    website/extended-details.php
     website/hierarchy.php
     website/lookup.php
     website/polygons.php
