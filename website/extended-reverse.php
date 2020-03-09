@@ -23,7 +23,6 @@ $oPlaceLookup->setIncludeAddressDetails($oParams->getBool('addressdetails', true
 
 $fLat = $oParams->getFloat('lat');
 $fLon = $oParams->getFloat('lon');
-$iZoom = $oParams->getInt('zoom', 18);
 
 
 if ($fLat !== false && $fLon !== false) {
