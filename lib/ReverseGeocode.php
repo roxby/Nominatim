@@ -264,7 +264,7 @@ class ReverseGeocode
         $sSQL .= " WHERE ST_GeometryType(geometry) in ('ST_Polygon', 'ST_MultiPolygon')";
         $sSQL .= " AND rank_search >=$countryRank";
         $sSQL .= " AND name is not null";
-        $sSQL .= " AND  AND type != 'postcode'";
+        $sSQL .= ' AND type != \'postcode\' ';
         $sSQL .= " AND ST_CONTAINS(geometry, $sPoint)";
         $sSQL .= " ORDER BY rank_address DESC";
 
