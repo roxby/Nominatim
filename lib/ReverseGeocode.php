@@ -248,6 +248,7 @@ class ReverseGeocode
 
     /**
      * find places containing sent coordinates on all zoom levels
+     * return structure zoom => osm id
      * @param $fLat
      * @param $fLon
      * @param $sLanguagePrefArraySQL
@@ -271,28 +272,24 @@ class ReverseGeocode
         $aPlaces = $this->oDB->getAll($sSQL, null, 'Nothing found');
 
         foreach ($aPlaces as $aPlace) {
-            $aRes[$aPlace['osm_id']] = [
-                'rank' => $aPlace['rank_search'],
-                'type' => $aPlace['osm_type'],
-                'class' => $aPlace['class'],
-                'zoom' => $this->getZoomLevels($aPlace['rank_search']),
-                'name' => $aPlace['name'],
-                'country_code' => $aPlace['country_code']
-            ];
 
+            $zoom = $this->getZoomLevel($aPlace['rank_search']);
+            if(!$zoom) continue;
+            $aRes[$zoom] = $aPlace['osm_id'];
         }
+        krsort($aRes);
         return $aRes;
     }
 
 
-    private function getZoomLevels($r)
+    private function getZoomLevel($rankSearch)
     {
         $aZoom = [];
         foreach ($this->aZoomRank as $zoom => $rank) {
-            if ($r == $rank)
+            if ($rankSearch == $rank)
                 $aZoom[] = $zoom;
         }
-        return $aZoom;
+        return !empty($aZoom) ? max($aZoom) : null;
     }
 
 
