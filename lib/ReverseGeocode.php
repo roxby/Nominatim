@@ -19,9 +19,9 @@ class ReverseGeocode
         7 => 10,
         8 => 12, // County
         9 => 12,
-        10 => 17, // City
-        11 => 17,
-        12 => 18, // Town / Village
+        10 => 16, // City
+        11 => 17, // Island, town, moor, waterways
+        12 => 18, // Hamlet / Village
         13 => 18,
         14 => 22, // Suburb
         15 => 22,
@@ -259,10 +259,10 @@ class ReverseGeocode
         //build sql point
         $sPoint = 'ST_SetSRID(ST_Point(' . $fLon . ',' . $fLat . '),4326)';
         $countryRank = 4; //country rank
-        $sSQL = "SELECT osm_id, rank_address, country_code, get_name_by_language(name,$sLanguagePrefArraySQL) AS name";
+        $sSQL = "SELECT osm_id, osm_type, class, rank_search, country_code, get_name_by_language(name,$sLanguagePrefArraySQL) AS name";
         $sSQL .= " FROM placex";
         $sSQL .= " WHERE ST_GeometryType(geometry) in ('ST_Polygon', 'ST_MultiPolygon')";
-        $sSQL .= " AND rank_address >=$countryRank";
+        $sSQL .= " AND rank_search >=$countryRank";
         $sSQL .= " AND name is not null";
         $sSQL .= " AND ST_CONTAINS(geometry, $sPoint)";
         $sSQL .= " ORDER BY rank_address DESC";
@@ -271,7 +271,10 @@ class ReverseGeocode
 
         foreach ($aPlaces as $aPlace) {
             $aRes[$aPlace['osm_id']] = [
-                'zoom' => $this->getZoomLevels($aPlace['rank_address']),
+                'rank' => $aPlace['rank_search'],
+                'type' => $aPlace['osm_type'],
+                'class' => $aPlace['class'],
+                'zoom' => $this->getZoomLevels($aPlace['rank_search']),
                 'name' => $aPlace['name'],
                 'country_code' => $aPlace['country_code']
             ];
