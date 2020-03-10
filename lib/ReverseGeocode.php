@@ -8,7 +8,28 @@ class ReverseGeocode
 {
     protected $oDB;
     protected $iMaxRank = 28;
-
+    protected $aZoomRank = [
+        0 => 2, // Continent / Sea
+        1 => 2,
+        2 => 2,
+        3 => 4, // Country
+        4 => 4,
+        5 => 8, // State
+        6 => 10, // Region
+        7 => 10,
+        8 => 12, // County
+        9 => 12,
+        10 => 16, // City
+        11 => 17, // Island, town, moor, waterways
+        12 => 18, // Hamlet / Village
+        13 => 18,
+        14 => 22, // Suburb
+        15 => 22,
+        16 => 26, // major street
+        17 => 27, // minor street
+        18 => 30, // or >, Building
+        19 => 30, // or >, Building
+    ];
 
     public function __construct(&$oDB)
     {
@@ -224,6 +245,53 @@ class ReverseGeocode
             $bDoInterpolation
         );
     }
+
+    /**
+     * find places containing sent coordinates on all zoom levels
+     * return structure zoom => osm id
+     * @param $fLat
+     * @param $fLon
+     * @param $sLanguagePrefArraySQL
+     * @return array
+     */
+    public function getAllZoomLevels($fLat, $fLon, $sLanguagePrefArraySQL)
+    {
+        $aRes = [];
+        //build sql point
+        $sPoint = 'ST_SetSRID(ST_Point(' . $fLon . ',' . $fLat . '),4326)';
+        $countryRank = 4; //country rank
+        $sSQL = "SELECT osm_id, osm_type, class, rank_search, country_code, get_name_by_language(name,$sLanguagePrefArraySQL) AS name";
+        $sSQL .= " FROM placex";
+        $sSQL .= " WHERE ST_GeometryType(geometry) in ('ST_Polygon', 'ST_MultiPolygon')";
+        $sSQL .= " AND rank_search >=$countryRank";
+        $sSQL .= " AND name is not null";
+        $sSQL .= ' AND type != \'postcode\' ';
+        $sSQL .= " AND ST_CONTAINS(geometry, $sPoint)";
+        $sSQL .= " ORDER BY rank_address DESC";
+
+        $aPlaces = $this->oDB->getAll($sSQL, null, 'Nothing found');
+
+        foreach ($aPlaces as $aPlace) {
+
+            $zoom = $this->getZoomLevel($aPlace['rank_search']);
+            if(!$zoom) continue;
+            $aRes[$zoom] = $aPlace['osm_id'];
+        }
+        krsort($aRes);
+        return $aRes;
+    }
+
+
+    private function getZoomLevel($rankSearch)
+    {
+        $aZoom = [];
+        foreach ($this->aZoomRank as $zoom => $rank) {
+            if ($rankSearch == $rank)
+                $aZoom[] = $zoom;
+        }
+        return !empty($aZoom) ? max($aZoom) : null;
+    }
+
 
     public function lookupPoint($sPointSQL, $bDoInterpolation = true)
     {
